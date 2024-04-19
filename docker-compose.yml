@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  psql-jobs-jobs-dev:
+    image: postgres:latest
+    container_name: postgres-auth
+    environment:
+      POSTGRES_DB: AuthDB
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth_db_volume:/var/lib/postgresql/data
+
+volumes:
+  auth_db_volume:

@@ -1,5 +1,5 @@
 const dbConnection = require("./dbConnection")
-const User = require("../apps/Users/UserModel")
+const User = require("../apps/Users/Model")
 
 // criar tabelas no banco de dados
 

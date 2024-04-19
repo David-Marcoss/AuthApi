@@ -1,8 +1,41 @@
-const { raw } = require("body-parser");
 const User = require("./Model")
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt')
+const jwt = require("jsonwebtoken")
 
 class UserController{
+
+    static async authentication(req,res){
+        const {email, password} = req.body
+        
+        if (email && password){
+
+            const user =  await User.findOne({where: {email}})
+
+            if (user && bcrypt.compareSync(password, user.password)) {
+
+                await jwt.sign(
+                    {id: user.id},
+                    process.env.JWT_SECRET_KEY,
+                    {expiresIn: "48h"}, 
+                    (error, token) =>{
+                        if (error){
+                            res.status(500).json({error})
+                        }else{
+                            res.status(200).json({token})
+                        }
+                    }
+                )
+
+            }else{
+                res.status(400).json({error: "invalid credentials !!"})
+            }
+
+
+        }else{
+            res.status(400).json({error: "Bad request !!"})
+        }
+
+    }
 
     static async create(req,res){
         const { name, email, password } = req.body
@@ -15,13 +48,17 @@ class UserController{
                 const salt = bcrypt.genSaltSync(10)
                 const hash = bcrypt.hashSync(password,salt)
 
-                await User.create({
+                const user = await User.create({
                     name,
                     email,
                     password: hash
                 })
+                
+                const data = user.toJSON()
 
-                res.status(201).json({msg: "created"})
+                delete data.password
+
+                res.status(201).json(data)
 
             }catch (error) {
                 res.status(500).json({error})
@@ -33,53 +70,58 @@ class UserController{
     }
 
     static async update(req, res) {
-        const data = req.body;
-        const id = req.params.id;
+        const data = req.body
+        const id = req.params.id
     
         try {
-            const user = await User.findByPk(id);
-            if (!user) {
-                res.status(404).json({ error: "User not found!" });
-            }
-    
-            if (data.password) {
-                const salt = bcrypt.genSaltSync(10);
-                data.password = bcrypt.hashSync(data.password, salt);
-            }
 
-            const updatedUser  = await User.update(data, { where: { id } });
+            if (req.userId != id){
+                res.status(401).json({ error: "You do not have authorization to update this user !!" })
+            }else{
 
-            res.status(200).json({msg: "updeted"});
+                if (data.password) {
+                    const salt = bcrypt.genSaltSync(10)
+                    data.password = bcrypt.hashSync(data.password, salt)
+                }
+
+                await User.update(data, { where: { id } })
+                
+                const user = await User.findOne({ where: { id } })
+                const user_updeted = user.toJSON()
+
+                delete user_updeted.password
+
+                res.status(200).json(user_updeted)
+            }
 
         } catch (error) {
-            console.error("Error updating user:", error);
 
-            res.status(400).json({ error: "Invalid data!" });
+            res.status(400).json({ error: "Invalid data!" })
         }
     }
 
     static async findOne(req, res) {
-        const id = req.params.id;
+        const id = req.params.id
     
         try {
             if (isNaN(id)){
-                res.status(400).json({ error: "bad Request !!" });
+                res.status(400).json({ error: "bad Request !!" })
             }
             
-            const user = await User.findByPk(id);
+            const user = await User.findByPk(id)
             
             if (!user) {
-                res.status(404).json({ error: "User not found!" });
+                res.status(404).json({ error: "User not found!" })
             }else{
                 
                 const data = user.toJSON()
 
                 delete data.password
 
-                res.status(200).json(data);
+                res.status(200).json(data)
             }
         } catch (error) {
-            res.status(500).json({ error });
+            res.status(500).json({ error })
         }
     }
 
@@ -97,21 +139,20 @@ class UserController{
     }
 
     static async delete(req, res) {
-        const id = req.params.id;
+        const id = req.params.id
     
         try {
-            if ( await User.findByPk(id)  == undefined) {
-                res.status(404).json({ error: "User not found!" });
-            
+            if (req.userId != id){
+                res.status(401).json({ error: "You do not have authorization to delete this user !!" })
             }else{
 
                 await User.destroy({where: {id}})
 
-                res.status(200).json({msg:"deleted!!"});
+                res.status(200).json({msg:"deleted!!"})
             }
 
         } catch (error) {
-            res.status(500).json({ error });
+            res.status(500).json({ error })
         }
     }
     

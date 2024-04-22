@@ -38,33 +38,36 @@ class UserController{
     }
 
     static async create(req,res){
-        const { name, email, password } = req.body
+        try{
+            const { name, email, password } = req.body
 
-        if (name, email , password){
-            try{
+            if (name, email , password){
+
                 if( await User.findOne({where: {email}}) != undefined){
                     res.status(400).json({error: "email already registered !!"})
+                }else{
+                    const salt = bcrypt.genSaltSync(10)
+                    const hash = bcrypt.hashSync(password,salt)
+
+                    const user = await User.create({
+                        name,
+                        email,
+                        password: hash
+                    })
+                    
+                    const data = user.toJSON()
+
+                    delete data.password
+
+                    res.status(201).json(data)
                 }
-                const salt = bcrypt.genSaltSync(10)
-                const hash = bcrypt.hashSync(password,salt)
-
-                const user = await User.create({
-                    name,
-                    email,
-                    password: hash
-                })
-                
-                const data = user.toJSON()
-
-                delete data.password
-
-                res.status(201).json(data)
-
-            }catch (error) {
-                res.status(500).json({error})
+            
+            }else{
+                res.status(400).json({error: "Bad request !!"})
             }
-        }else{
-            res.status(400).json({error: "Bad request !!"})
+
+        }catch (error) {
+            res.status(500).json({error})
         }
 
     }

@@ -20,6 +20,23 @@ const User = dbConnection.define("users", {
 
 })
 
+const ResetPassword = dbConnection.define("reset_password", {
+    token: {
+        type: Sequelize.STRING,
+        unique: true,
+        allowNull: false
+    },
+    active: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        default: true
+    },
 
-module.exports = User
+})
+
+ResetPassword.belongsTo(User)
+User.hasMany(ResetPassword)
+
+
+module.exports = {User, ResetPassword}
 

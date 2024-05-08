@@ -1,5 +1,5 @@
 const dbConnection = require("./dbConnection")
-const User = require("../apps/Users/Model")
+const {User, ResetPassword} = require("../apps/Users/Model")
 
 // criar tabelas no banco de dados
 
@@ -8,3 +8,4 @@ dbConnection.authenticate()
     .catch( error => console.log("Erro ao conectar DB: ", error))
 
 User.sync({force: false}).then(() => {})
+ResetPassword.sync({force: false}).then(() => {})

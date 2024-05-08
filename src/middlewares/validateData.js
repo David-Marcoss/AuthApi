@@ -10,10 +10,10 @@ function validateData(validationRules, req, res, next) {
         const extraKeys = Object.keys(req.body).filter(key => !validationRules.some(rule => rule.builder.fields.includes(key)));
         
         // verifica se alguma regra foi quebrada
-        if (!errors.isEmpty()) {
-            res.status(422).json({ errors: errors.array() });
-        }else if (extraKeys.length > 0) {
+        if (extraKeys.length > 0) {
             res.status(422).json({ error: 'Extra data is not allowed' });
+        }else if (!errors.isEmpty()) {
+            res.status(422).json({ errors: errors.array() });
         }else{
             next();
         }
